@@ -7,12 +7,12 @@ const { validateParams } = require("../../middlewares/paramsValidate");
 
 router.post(
   "/add",
-//   validate(validationSchemas.productCategory),
+  validate(validationSchemas.productCategory),
   BrandService.create
 );
 
 router.get("/get", BrandService.get);
-router.get("/get/:id", BrandService.get);
+router.get("/get/:id", BrandService.getOne);
 
 router.patch(
   "/update/:id",

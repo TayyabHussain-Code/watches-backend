@@ -37,73 +37,106 @@ const update = asyncErrorHandler(async (req, res) => {
   const { name, description } = req.body;
   const { id } = req.params;
 
-  //   const currentCategory = await ModelName.findByPk(id);
+  const currentRecord = await Brands.findByPk(id);
 
-  if (!currentCategory) {
+  if (!currentRecord) {
     return res.status(STATUS_CODES.NOT_FOUND).json({
-      success: 404,
+      success: false,
       message: STATUS_CODES.NOT_FOUND,
     });
   }
 
-  //   const [status, updatedData] = await ModelName.update(
-  //     { name, description },
-  //     {
-  //       where: { id },
-  //       returning: true,
-  //     }
-  //   );
+  const [status, updatedData] = await Brands.update(
+    { name, description },
+    {
+      where: { id },
+      returning: true,
+    }
+  );
 
-  //   if (!status) {
-  //     return res.status(STATUS_CODES.NOT_FOUND).json({
-  //       success: 404,
-  //       message: "Update failed",
-  //     });
-  //   }
+  if (!status) {
+    return res.status(STATUS_CODES.NOT_FOUND).json({
+      success: 404,
+      message: "Update failed",
+    });
+  }
 
   return res.status(STATUS_CODES.SUCCESS).json({
     success: STATUS_CODES.SUCCESS,
-    message: "Category updated successfully",
+    message: "Record updated successfully",
     // data: updatedData[0], // Returning the updated category data
   });
 });
 
 const get = asyncErrorHandler(async (req, res) => {
-  const { name } = req.query;
+  try {
+    const { search } = req.query;
 
-  let filter = {};
+    let filter = {};
 
-  if (name) {
-    filter.name = { [Op.iLike]: `%${name}%` };
+    if (search) {
+      filter.name = { [Op.iLike]: `%${search}%` };
+    }
+
+    const { count, rows } = await Brands.findAndCountAll({
+      where: filter,
+      ...req.pagination,
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.FOUND,
+      total: count,
+      limit: req.pagination.limit,
+      pageCount: Math.ceil(count / req.pagination.limit),
+      page: req.pagination.offset / req.pagination.limit + 1,
+      data: rows,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
+});
 
-  //   const {count , rows} = await ModelName.findAndCountAll({
-  //     where: filter,
-  //     ...req.pagination
-  //   });
+const getOne = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  res.status(STATUS_CODES.SUCCESS).json({
-    statusCode: 200,
-    message: TEXTS.FOUND,
-  });
+    const data = await Brands.findOne({
+      where: { id },
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.FOUND,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
 });
 
 const del = asyncErrorHandler(async (req, res) => {
-  // const deleted = await ModelName.destroy({
-  //   where: {
-  //     id: req.params?.id
-  //   }
-  // });
+  const deleted = await Brands.destroy({
+    where: {
+      id: req.params?.id,
+    },
+  });
 
-  // if(!deleted){
-  //   return res.status(STATUS_CODES.NOT_FOUND).json({
-  //     statusCode: 404,
-  //     message: "No record found against the categoryId for deletion.",
-  //   });
-  // }
+  if (!deleted) {
+    return res.status(STATUS_CODES.NOT_FOUND).json({
+      success: false,
+      message: "No record found against the id for deletion.",
+    });
+  }
 
   res.status(STATUS_CODES.SUCCESS).json({
-    statusCode: 200,
+    success: true,
     message: TEXTS.DELETED,
   });
 });
@@ -112,5 +145,6 @@ module.exports = {
   create,
   update,
   get,
+  getOne,
   del,
 };

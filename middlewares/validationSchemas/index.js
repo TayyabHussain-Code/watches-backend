@@ -1,3 +1,4 @@
 module.exports = {
-    login: require('./user')
+    login: require('./user'),
+    brand: require('./brand'),
 }
