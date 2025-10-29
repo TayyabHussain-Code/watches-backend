@@ -7,7 +7,7 @@ const { validateParams } = require("../../middlewares/paramsValidate");
 
 router.post(
   "/add",
-  validate(validationSchemas.productCategory),
+  validate(validationSchemas.brand),
   BrandService.create
 );
 

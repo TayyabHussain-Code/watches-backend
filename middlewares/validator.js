@@ -4,7 +4,7 @@ module.exports.validate = (schema) => {
       if (error) {
         const errorMsg = error.details[0].message;
         const err = errorMsg.replace(/"/g, "");
-        return res.status(400).json({ status: 400, error: err });
+        return res.status(400).json({ success: false, message: err });
       }
       next();
     };
