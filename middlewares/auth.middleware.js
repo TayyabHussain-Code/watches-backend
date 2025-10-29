@@ -6,7 +6,7 @@ const authenticate = async (req, res, next) => {
   if (!header || !header.startsWith("Bearer")) {
     return res
       .status(STATUS_CODES.UNAUTHORIZED)
-      .json({ message: TEXTS.INVALID_AUTH_TOKEN });
+      .json({ status: false, message: TEXTS.INVALID_AUTH_TOKEN });
   }
 
   const accessToken = header.split(" ")[1];
@@ -15,7 +15,7 @@ const authenticate = async (req, res, next) => {
     if (result.err) {
       res
         .status(STATUS_CODES.UNAUTHORIZED)
-        .json({ message: TEXTS.INVALID_AUTH_TOKEN });
+        .json({ status:false, message: TEXTS.INVALID_AUTH_TOKEN });
     } else {
       req.user = result.decoded;
       next();

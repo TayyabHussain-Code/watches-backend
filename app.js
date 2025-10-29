@@ -3,8 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const { unless } = require("express-unless");
 const routes = require("./routes/index");
-// const { authenticateRoutes } = require("./config/unlessRoutes");
-// const { authenticate } = require("./middlewares/auth.middleware");
+const { authenticateRoutes } = require("./config/unlessRoutes");
+const { authenticate } = require("./middlewares/auth.middleware");
 const CustomError = require("./utils/CustomError");
 const globalErrorHandler = require("./controllers/error/errorController");
 const app = express();
@@ -15,8 +15,8 @@ app.use(express.urlencoded({ limit: '5mb', extended: false }));
 
 
 
-// authenticate.unless = unless;
-// app.use(authenticate.unless(authenticateRoutes));
+authenticate.unless = unless;
+app.use(authenticate.unless(authenticateRoutes));
 
 app.get("/decode", (req, res) => {
   res.status(200).json({ message: "Token Decoded Successfully!", decodedToken : req.user });
