@@ -1,9 +1,8 @@
 const Joi = require("joi");
 
-const schema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().required()
+const login = Joi.object({
+  email: Joi.string().email().required().empty(''),
+  password: Joi.string().required().empty(''),
 });
 
-module.exports = schema;
+module.exports = login;

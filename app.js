@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ limit: '5mb', extended: false }));  
 
-app.use('/api', routes);
+
 
 // authenticate.unless = unless;
 // app.use(authenticate.unless(authenticateRoutes));
@@ -25,5 +25,5 @@ app.get("/decode", (req, res) => {
 app.use(require('./middlewares/paginate').paginate)
 
 app.use(globalErrorHandler);
-
+app.use('/api', routes);
 module.exports = app;

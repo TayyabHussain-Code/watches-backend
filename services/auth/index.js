@@ -1,35 +1,58 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
-const { Brands } = require("../../models");
+const { User } = require("../../models");
 const { Op } = require("sequelize");
+const { generateToken } = require("../../utils/jwtToken");
+const bcrypt = require('bcrypt');
 
-const login = asyncErrorHandler(async (req, res) => {
+const login = asyncErrorHandler(async (req, res) => { 
+    console.log('i am here')
   try {
-    const isExist = await Brands.findOne({
-      where: {
-        name: req?.body.name,
-      },
+      const {email, password} = req.body;
+    const isExistUser = await User.findOne({
+      where: { email: email },
     });
-
-    if (isExist) {
-      return res.status(STATUS_CODES.CONFLICT).json({
+    if (!isExistUser) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
         success: false,
-        message: "Brand already exist.",
+        message: "User not found",
+      });
+    }else if(isExistUser.role !== 'admin'){
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "Unauthorized User",
+      });
+    }
+    
+    const isPassword = await bcrypt.compare(password, isExistUser.password);
+
+    if(!isPassword){
+         return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Credentials",
       });
     }
 
-    const data = await Brands.create({ ...req.body });
+     const token = generateToken(isExistUser);    
 
-    res.status(STATUS_CODES.CREATED).json({
-      success: true,
-      message: TEXTS.CREATED,
-      data: data,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
+     // convert instance to plain object 
+     const user = isExistUser.toJSON();
+
+
+     delete user.password
+
+     const data = {
+       user:isExistUser,
+       token:  token
+     }
+      return res.status(STATUS_CODES.SUCCESS).json({
+        success: true,
+        user: user,
+        token: token
+      })
+   
+  } catch (err) {
+    return error(res, "Failed to login user", [err.message], 500);
   }
 });
 
