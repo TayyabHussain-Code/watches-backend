@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const CategoryService = require("../../services/brand");
+const CategoryService = require("../../services/category");
 
 const { validate } = require("../../middlewares/validator");
 const validationSchemas = require("../../middlewares/validationSchemas");
@@ -7,20 +7,20 @@ const { validateParams } = require("../../middlewares/paramsValidate");
 
 router.post(
   "/add",
-  validate(validationSchemas.productCategory),
-  BrandService.create
+  validate(validationSchemas.category),
+  CategoryService.create
 );
 
-router.get("/get", BrandService.get);
-router.get("/get/:id", BrandService.getOne);
+router.get("/get", CategoryService.get);
+router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), CategoryService.getOne);
 
 router.patch(
   "/update/:id",
   validateParams(validationSchemas.paramsIdValidation),
   validate(validationSchemas.user),
-  BrandService.update
+  CategoryService.update
 );
 
-router.delete("/delete/:id", BrandService.del);
+router.delete("/delete/:id", CategoryService.del);
 
 module.exports = router;

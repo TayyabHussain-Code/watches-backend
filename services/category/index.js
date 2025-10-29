@@ -1,11 +1,11 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
-const { Brands } = require("../../models");
+const { Category } = require("../../models");
 const { Op } = require("sequelize");
 
 const create = asyncErrorHandler(async (req, res) => {
   try {
-    const isExist = await Brands.findOne({
+    const isExist = await Category.findOne({
       where: {
         name: req?.body.name,
       },
@@ -14,11 +14,11 @@ const create = asyncErrorHandler(async (req, res) => {
     if (isExist) {
       return res.status(STATUS_CODES.CONFLICT).json({
         success: false,
-        message: "Brand already exist.",
+        message: "Category already exist.",
       });
     }
 
-    const data = await Brands.create({ ...req.body });
+    const data = await Category.create({ ...req.body });
 
     res.status(STATUS_CODES.CREATED).json({
       success: true,
@@ -37,16 +37,30 @@ const update = asyncErrorHandler(async (req, res) => {
   const { name, description } = req.body;
   const { id } = req.params;
 
-  const currentRecord = await Brands.findByPk(id);
+  const currentRecord = await Category.findByPk(id);
 
   if (!currentRecord) {
     return res.status(STATUS_CODES.NOT_FOUND).json({
       success: false,
       message: STATUS_CODES.NOT_FOUND,
     });
+  } 
+   // check if the name is being updated to an existing record
+  const isExist = await Category.findOne({
+    where: {
+      name,
+      id: { [Op.ne]: id }, 
+    },
+  });
+
+  if (isExist) {
+    return res.status(STATUS_CODES.CONFLICT).json({
+      success: false,
+      message: "category name already exist.",
+    });
   }
 
-  const [status, updatedData] = await Brands.update(
+  const [status, updatedData] = await Category.update(
     { name, description },
     {
       where: { id },
@@ -78,7 +92,7 @@ const get = asyncErrorHandler(async (req, res) => {
       filter.name = { [Op.iLike]: `%${search}%` };
     }
 
-    const { count, rows } = await Brands.findAndCountAll({
+    const { count, rows } = await Category.findAndCountAll({
       where: filter,
       ...req.pagination,
     });
@@ -86,11 +100,11 @@ const get = asyncErrorHandler(async (req, res) => {
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
       message: TEXTS.FOUND,
+      data: rows,
       total: count,
       limit: req.pagination.limit,
       pageCount: Math.ceil(count / req.pagination.limit),
       page: req.pagination.offset / req.pagination.limit + 1,
-      data: rows,
     });
   } catch (error) {
     res.status(500).json({
@@ -104,7 +118,7 @@ const getOne = asyncErrorHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
-    const data = await Brands.findOne({
+    const data = await Category.findOne({
       where: { id },
     });
 
@@ -116,13 +130,13 @@ const getOne = asyncErrorHandler(async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: error.message,
     });
   }
 });
 
 const del = asyncErrorHandler(async (req, res) => {
-  const deleted = await Brands.destroy({
+  const deleted = await Category.destroy({
     where: {
       id: req.params?.id,
     },

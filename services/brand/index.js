@@ -44,6 +44,21 @@ const update = asyncErrorHandler(async (req, res) => {
       success: false,
       message: STATUS_CODES.NOT_FOUND,
     });
+  }   
+
+  // check if the name is being updated to an existing brand name
+  const isExist = await Brands.findOne({
+    where: {
+      name,
+      id: { [Op.ne]: id }, 
+    },
+  });
+
+  if (isExist) {
+    return res.status(STATUS_CODES.CONFLICT).json({
+      success: false,
+      message: "Brand name already exist.",
+    });
   }
 
   const [status, updatedData] = await Brands.update(
@@ -86,11 +101,11 @@ const get = asyncErrorHandler(async (req, res) => {
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
       message: TEXTS.FOUND,
+      data: rows,
       total: count,
       limit: req.pagination.limit,
       pageCount: Math.ceil(count / req.pagination.limit),
       page: req.pagination.offset / req.pagination.limit + 1,
-      data: rows,
     });
   } catch (error) {
     res.status(500).json({

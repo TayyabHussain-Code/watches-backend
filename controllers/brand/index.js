@@ -12,12 +12,12 @@ router.post(
 );
 
 router.get("/get", BrandService.get);
-router.get("/get/:id", BrandService.getOne);
+router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), BrandService.getOne);
 
 router.patch(
   "/update/:id",
   validateParams(validationSchemas.paramsIdValidation),
-  validate(validationSchemas.user),
+  validate(validationSchemas.brand),
   BrandService.update
 );
 
