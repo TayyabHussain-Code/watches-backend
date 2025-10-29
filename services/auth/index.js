@@ -6,7 +6,6 @@ const { generateToken } = require("../../utils/jwtToken");
 const bcrypt = require('bcrypt');
 
 const login = asyncErrorHandler(async (req, res) => { 
-    console.log('i am here')
   try {
       const {email, password} = req.body;
     const isExistUser = await User.findOne({
@@ -38,7 +37,6 @@ const login = asyncErrorHandler(async (req, res) => {
      // convert instance to plain object 
      const user = isExistUser.toJSON();
 
-
      delete user.password
 
      const data = {
@@ -52,7 +50,10 @@ const login = asyncErrorHandler(async (req, res) => {
       })
    
   } catch (err) {
-    return error(res, "Failed to login user", [err.message], 500);
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    })
   }
 });
 
