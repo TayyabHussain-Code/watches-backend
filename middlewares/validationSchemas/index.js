@@ -3,4 +3,5 @@ module.exports = {
     brand: require('./brand'),
     category: require('./category'),
     paramsIdValidation: require('./paramsIdValidation'),
+    product : require('./product'),
 }

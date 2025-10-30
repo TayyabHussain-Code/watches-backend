@@ -1,0 +1,28 @@
+const router = require("express").Router();
+const ProductService = require("../../services/product");
+
+const { validate } = require("../../middlewares/validator");
+const validationSchemas = require("../../middlewares/validationSchemas");
+const { validateParams } = require("../../middlewares/paramsValidate");
+const { upload } = require("../../utils/multer");
+
+router.post(
+  "/add", 
+  upload.array("images", 5),
+  validate(validationSchemas.product),
+  ProductService.create
+);
+
+router.get("/get", ProductService.get);
+router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), ProductService.getOne);
+
+router.patch(
+  "/update/:id",
+  validateParams(validationSchemas.paramsIdValidation),
+  validate(validationSchemas.user),
+  ProductService.update
+);
+
+router.delete("/delete/:id", ProductService.del);
+
+module.exports = router;
