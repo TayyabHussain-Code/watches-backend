@@ -61,7 +61,7 @@ const create = asyncErrorHandler(async (req, res) => {
 
 
 const update = asyncErrorHandler(async (req, res) => {
-  const { name, description } = req.body;
+
   const { id } = req.params;
 
   const currentRecord = await Product.findByPk(id);
@@ -69,26 +69,47 @@ const update = asyncErrorHandler(async (req, res) => {
   if (!currentRecord) {
     return res.status(STATUS_CODES.NOT_FOUND).json({
       success: false,
-      message: STATUS_CODES.NOT_FOUND,
-    });
-  }
-  // check if the name is being updated to an existing record
-  const isExist = await Product.findOne({
-    where: {
-      name,
-      id: { [Op.ne]: id },
-    },
-  });
-
-  if (isExist) {
-    return res.status(STATUS_CODES.CONFLICT).json({
-      success: false,
-      message: "Product name already exist.",
+      message: 'No record found against the id for update.',
     });
   }
 
+  let coverImage = currentRecord.coverImage;
+  let otherImages = currentRecord.otherImages;
+
+  const uploadedFilePaths = [];
+
+  if (req.files && req.files.length > 0) {
+    // Delete old files first
+    const oldFiles = [];
+
+    if (coverImage) oldFiles.push(`./public${coverImage}`);
+    if (otherImages && Array.isArray(otherImages)) {
+      otherImages.forEach((img) => oldFiles.push(`./public${img}`));
+    }
+
+    for (const path of oldFiles) {
+      try {
+        await fs.unlink(path);
+        console.log(`Deleted old file: ${path}`);
+      } catch (err) {
+        console.error(`Failed to delete file ${path}:`, err);
+      }
+    }
+
+    // Save new uploaded files
+    coverImage = `/image/${req.files[0].filename}`;
+    uploadedFilePaths.push(req.files[0].path);
+
+    otherImages = [];
+    for (let i = 1; i < req.files.length; i++) {
+      otherImages.push(`/image/${req.files[i].filename}`);
+      uploadedFilePaths.push(req.files[i].path);
+    }
+  }
+  const updateData = { ...req.body };
+  // Update product
   const [status, updatedData] = await Product.update(
-    { name, description },
+    { ...updateData, coverImage, otherImages },
     {
       where: { id },
       returning: true,
@@ -96,16 +117,26 @@ const update = asyncErrorHandler(async (req, res) => {
   );
 
   if (!status) {
-    return res.status(STATUS_CODES.NOT_FOUND).json({
-      success: 404,
+    // Rollback new uploaded files if update failed
+    for (const filePath of uploadedFilePaths) {
+      try {
+        await fs.unlink(filePath);
+        console.log(`Deleted uploaded file due to rollback: ${filePath}`);
+      } catch (err) {
+        console.error(`Failed to delete file ${filePath}:`, err);
+      }
+    }
+
+    return res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({
+      success: false,
       message: "Update failed",
     });
   }
 
   return res.status(STATUS_CODES.SUCCESS).json({
-    success: STATUS_CODES.SUCCESS,
+    success: true,
     message: "Record updated successfully",
-    // data: updatedData[0], // Returning the updated Product data
+    // data: updatedData[0], // Uncomment if you want to return updated product
   });
 });
 
@@ -163,17 +194,42 @@ const getOne = asyncErrorHandler(async (req, res) => {
 });
 
 const del = asyncErrorHandler(async (req, res) => {
-  const deleted = await Product.destroy({
-    where: {
-      id: req.params?.id,
-    },
+  const product = await Product.findOne({
+    where: { id: req.params?.id },
   });
 
-  if (!deleted) {
+  if (!product) {
     return res.status(STATUS_CODES.NOT_FOUND).json({
       success: false,
       message: "No record found against the id for deletion.",
     });
+  }
+
+  // Collect all images paths to delete
+  const imagePaths = [];
+
+  if (product.coverImage) {
+    imagePaths.push(`./public/${product.coverImage}`); 
+  }
+  if (product.otherImages && Array.isArray(product.otherImages)) {
+    product.otherImages.forEach((img) => {
+      imagePaths.push(`./public/${img}`);
+    });
+  }
+
+  // Delete product from DB
+  await Product.destroy({
+    where: { id: req.params?.id },
+  });
+
+  // Delete files
+  for (const path of imagePaths) {
+    try {
+      await fs.unlink(path);
+      console.log(`Deleted file: ${path}`);
+    } catch (err) {
+      console.error(`Failed to delete file ${path}:`, err);
+    }
   }
 
   res.status(STATUS_CODES.SUCCESS).json({

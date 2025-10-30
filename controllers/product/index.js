@@ -18,11 +18,12 @@ router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), Pr
 
 router.patch(
   "/update/:id",
+  upload.array("images", 5),
   validateParams(validationSchemas.paramsIdValidation),
-  validate(validationSchemas.user),
+  validate(validationSchemas.productUpdate),
   ProductService.update
 );
 
-router.delete("/delete/:id", ProductService.del);
+router.delete("/delete/:id",  validateParams(validationSchemas.paramsIdValidation), ProductService.del);
 
 module.exports = router;
