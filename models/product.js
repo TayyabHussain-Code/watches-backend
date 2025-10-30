@@ -12,8 +12,12 @@ class Product extends BaseModel {
           allowNull: false
         },
         price: {
-          type: DataTypes.DECIMAL,
+          type: DataTypes.INTEGER,
           allowNull: false
+        },
+        discount: {
+          type: DataTypes.INTEGER,
+          defaultValue: 0
         },
         description: DataTypes.TEXT,
         categoryId: {

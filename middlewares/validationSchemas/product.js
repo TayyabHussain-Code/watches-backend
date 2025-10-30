@@ -23,6 +23,15 @@ const create = Joi.object({
         'number.positive': 'Price must be a positive number',
         'any.required': 'Price is required'
       }),
+    discount: Joi.number()
+      .positive()
+      .precision(2)
+      .required()
+      .messages({
+        'number.base': 'discount must be a number',
+        'number.positive': 'discount must be a positive number',
+        'any.required': 'discount is required'
+      }),
 
     description: Joi.string()
       .trim()

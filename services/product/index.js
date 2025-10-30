@@ -3,10 +3,10 @@ const { STATUS_CODES, TEXTS } = require("../../config/constants");
 const { Category, Brand, Product } = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
-const fs = require("fs").promises
+const fs = require("fs").promises;
 
 const create = asyncErrorHandler(async (req, res) => {
-  const uploadedFilePaths = []; 
+  const uploadedFilePaths = [];
   try {
     let coverImage = null;
     let otherImages = [];
@@ -14,14 +14,20 @@ const create = asyncErrorHandler(async (req, res) => {
     if (req.files && req.files.length > 0) {
       // First file as coverImage
       coverImage = `/images/${req.files[0].filename}`;
-      uploadedFilePaths.push(req.files[0].path); //  PATH SAVE 
+      uploadedFilePaths.push(req.files[0].path); //  PATH SAVE
 
       // Remaining files as otherImages
       for (let i = 1; i < req.files.length; i++) {
         otherImages.push(`/images/${req.files[i].filename}`);
-        uploadedFilePaths.push(req.files[i].path); // PATH SAVE 
+        uploadedFilePaths.push(req.files[i].path); // PATH SAVE
       }
     }
+
+    // handle discount in %
+   if (req.body.discount && req.body.discount > 0) {
+   req.body.price = Math.round(parseFloat(req.body.price) * (1 - parseFloat(req.body.discount) / 100));
+   }
+
 
     // Create product
     const data = await Product.create({
@@ -43,7 +49,7 @@ const create = asyncErrorHandler(async (req, res) => {
       console.log("Rolling back uploaded files...");
       for (const filePath of uploadedFilePaths) {
         try {
-          if (filePath && typeof filePath === 'string') {
+          if (filePath && typeof filePath === "string") {
             await fs.unlink(filePath);
             console.log(`Deleted file: ${filePath}`);
           }
@@ -59,9 +65,7 @@ const create = asyncErrorHandler(async (req, res) => {
   }
 });
 
-
 const update = asyncErrorHandler(async (req, res) => {
-
   const { id } = req.params;
 
   const currentRecord = await Product.findByPk(id);
@@ -69,7 +73,7 @@ const update = asyncErrorHandler(async (req, res) => {
   if (!currentRecord) {
     return res.status(STATUS_CODES.NOT_FOUND).json({
       success: false,
-      message: 'No record found against the id for update.',
+      message: "No record found against the id for update.",
     });
   }
 
@@ -209,7 +213,7 @@ const del = asyncErrorHandler(async (req, res) => {
   const imagePaths = [];
 
   if (product.coverImage) {
-    imagePaths.push(`./public/${product.coverImage}`); 
+    imagePaths.push(`./public/${product.coverImage}`);
   }
   if (product.otherImages && Array.isArray(product.otherImages)) {
     product.otherImages.forEach((img) => {

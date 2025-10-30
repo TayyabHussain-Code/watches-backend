@@ -7,14 +7,14 @@ const { validateParams } = require("../../middlewares/paramsValidate");
 const { upload } = require("../../utils/multer");
 
 router.post(
-  "/add", 
+  "/add",
   upload.array("images", 5),
   validate(validationSchemas.product),
   ProductService.create
 );
 
 router.get("/get", ProductService.get);
-router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), ProductService.getOne);
+router.get("/get/:id", validateParams(validationSchemas.paramsIdValidation), ProductService.getOne);
 
 router.patch(
   "/update/:id",
@@ -24,6 +24,8 @@ router.patch(
   ProductService.update
 );
 
-router.delete("/delete/:id",  validateParams(validationSchemas.paramsIdValidation), ProductService.del);
+router.delete("/delete/:id", validateParams(validationSchemas.paramsIdValidation), ProductService.del);   
+
+// add to cart 
 
 module.exports = router;
