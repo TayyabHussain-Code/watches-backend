@@ -1,6 +1,6 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
-const { Category, Brand, Product } = require("../../models");
+const { Category, Brand, Product, Cart } = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
 const fs = require("fs").promises;
@@ -24,10 +24,11 @@ const create = asyncErrorHandler(async (req, res) => {
     }
 
     // handle discount in %
-   if (req.body.discount && req.body.discount > 0) {
-   req.body.price = Math.round(parseFloat(req.body.price) * (1 - parseFloat(req.body.discount) / 100));
-   }
-
+    if (req.body.discount && req.body.discount > 0) {
+      req.body.price = Math.round(
+        parseFloat(req.body.price) * (1 - parseFloat(req.body.discount) / 100)
+      );
+    }
 
     // Create product
     const data = await Product.create({
@@ -242,10 +243,119 @@ const del = asyncErrorHandler(async (req, res) => {
   });
 });
 
+// add to cart
+const addToCart = asyncErrorHandler(async (req, res) => {
+  try {
+    const product = await Product.findOne({
+      where: { id: req.body.productId },
+    });
+
+    if (!product) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No record found against the id for deletion.",
+      });
+    }
+
+    console.log("i am here");
+
+    // check stock status
+    if (product.stockStatus === "out_of_stock") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Product is out of stock.",
+      });
+    }
+
+    let price = product.price * req.body.quantity;
+
+    const data = await Cart.create({
+      productId: req.body.productId,
+      quantity: req.body.quantity,
+      price,
+    });
+
+    console.log("i am here", data);
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: "Product added to cart successfully.",
+      cartId: data.id,
+      price: price,
+      product: {
+        name: product.name,
+        coverImage: product.coverImage,
+        stock: product.stock,
+        stockStatus: product.stockStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});   
+
+// show cart items 
+const showCartItems = asyncErrorHandler(async (req, res) => {
+  try {  
+     const {cartIds} = req.body;   
+
+     console.log("cartIds", cartIds);
+      
+     if(!cartIds || !Array.isArray (cartIds) || cartIds.length ===0){
+       return res.status(STATUS_CODES.BAD_REQUEST).json({
+         success: false,
+         message: "cartIds must be a non-empty array.",
+       });
+     }
+
+    const { count, rows } = await Cart.findAndCountAll({
+      where: {
+        id: { [Op.in]: cartIds }, 
+      }, 
+      include: [
+        {
+          model: Product,
+          as: 'product',
+          attributes: ['id', 'name', 'coverImage', 'otherImages', 'stock', 'stockStatus'],
+          include: [
+             {
+              model: Category,
+              as: 'category',
+        }
+          ]
+        },
+       
+      ],
+      ...req.pagination,
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.FOUND,      
+      data: rows,   
+      total: count,
+      limit: req.pagination.limit,
+      pageCount: Math.ceil(count / req.pagination.limit),
+      page: req.pagination.offset / req.pagination.limit + 1,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 module.exports = {
   create,
   update,
   get,
   getOne,
   del,
+  addToCart,
+  showCartItems,
 };

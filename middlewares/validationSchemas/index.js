@@ -5,4 +5,5 @@ module.exports = {
     paramsIdValidation: require('./paramsIdValidation'),
     product : require('./product').create,
     productUpdate : require('./product').update,
+    cart: require('./cart')
 }

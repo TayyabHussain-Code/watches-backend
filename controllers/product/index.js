@@ -26,6 +26,8 @@ router.patch(
 
 router.delete("/delete/:id", validateParams(validationSchemas.paramsIdValidation), ProductService.del);   
 
-// add to cart 
+// add to cart  
+router.post('/add-to-cart', validate(validationSchemas.cart), ProductService.addToCart)
+router.get('/show-cart-item', ProductService.showCartItems)
 
 module.exports = router;
