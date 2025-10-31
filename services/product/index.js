@@ -1,8 +1,9 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
-const { Category, Brand, Product, Cart } = require("../../models");
+const { Category, Brands, Product, Cart } = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
+
 const fs = require("fs").promises;
 
 const create = asyncErrorHandler(async (req, res) => {
@@ -156,6 +157,31 @@ const get = asyncErrorHandler(async (req, res) => {
     }
 
     const { count, rows } = await Product.findAndCountAll({
+       attributes: [
+            "id",
+            "name",
+            "coverImage",
+            "otherImages",
+            "stock",
+            "stockStatus",
+            "price",
+            "discount",
+            "description",
+          ],
+         
+          include: [
+            {
+              model: Category,
+              as: "category",
+              attributes: ["id", "name"],
+            },
+            {
+              model: Brands,
+              as: "brand",
+              attributes: ["id", "name", "icon"],
+            },
+          ],
+      
       where: filter,
       ...req.pagination,
     });
@@ -173,6 +199,7 @@ const get = asyncErrorHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
+      error : error.message,
     });
   }
 });
@@ -183,6 +210,31 @@ const getOne = asyncErrorHandler(async (req, res) => {
 
     const data = await Product.findOne({
       where: { id },
+      attributes: [
+            "id",
+            "name",
+            "coverImage",
+            "otherImages",
+            "stock",
+            "stockStatus",
+            "price",
+            "discount",
+            "description",
+          ],
+         
+          include: [
+            {
+              model: Category,
+              as: "category",
+              attributes: ["id", "name"],
+            },
+            {
+              model: Brands,
+              as: "brand",
+              attributes: ["id", "name", "icon"],
+            },
+          ],
+      
     });
 
     res.status(STATUS_CODES.SUCCESS).json({
@@ -296,47 +348,57 @@ const addToCart = asyncErrorHandler(async (req, res) => {
       message: error.message,
     });
   }
-});   
+});
 
-// show cart items 
+// show cart items
 const showCartItems = asyncErrorHandler(async (req, res) => {
-  try {  
-     const {cartIds} = req.body;   
+  try {
+    const { cartIds } = req.body;
 
-     console.log("cartIds", cartIds);
-      
-     if(!cartIds || !Array.isArray (cartIds) || cartIds.length ===0){
-       return res.status(STATUS_CODES.BAD_REQUEST).json({
-         success: false,
-         message: "cartIds must be a non-empty array.",
-       });
-     }
+    console.log("cartIds", cartIds);
+
+    if (!cartIds || !Array.isArray(cartIds) || cartIds.length === 0) {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "cartIds must be a non-empty array.",
+      });
+    }
 
     const { count, rows } = await Cart.findAndCountAll({
       where: {
-        id: { [Op.in]: cartIds }, 
-      }, 
+        id: { [Op.in]: cartIds },
+      },
       include: [
         {
           model: Product,
-          as: 'product',
-          attributes: ['id', 'name', 'coverImage', 'otherImages', 'stock', 'stockStatus'],
+          as: "product",
+          attributes: [
+            "id",
+            "name",
+            "coverImage",
+            "otherImages",
+            "stock",
+            "stockStatus",
+          ],
           include: [
-             {
+            {
               model: Category,
-              as: 'category',
-        }
-          ]
+              as: "category",
+            },
+            {
+              model: Brands,
+              as: "brand",
+            },
+          ],
         },
-       
       ],
       ...req.pagination,
     });
 
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
-      message: TEXTS.FOUND,      
-      data: rows,   
+      message: TEXTS.FOUND,
+      data: rows,
       total: count,
       limit: req.pagination.limit,
       pageCount: Math.ceil(count / req.pagination.limit),
