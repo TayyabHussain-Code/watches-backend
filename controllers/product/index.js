@@ -28,6 +28,26 @@ router.delete("/delete/:id", validateParams(validationSchemas.paramsIdValidation
 
 // add to cart  
 router.post('/add-to-cart', validate(validationSchemas.cart), ProductService.addToCart)
-router.get('/show-cart-item', ProductService.showCartItems)
+router.get('/show-cart-item', ProductService.showCartItems)  
+router.delete('/remove-cart-item/:id', validateParams(validationSchemas.paramsIdValidation), ProductService.removeCartItem)
 
+// checkout  
+router.post('/checkout', 
+  validate(validationSchemas.checkout),
+   ProductService.checkout);   
+
+// show checkout orders 
+router.get('/show-checkout-orders', ProductService.showCheckoutOrders)  
+
+// cancel order 
+router.patch('/cancel-order/:id', 
+  validateParams(validationSchemas.paramsIdValidation),
+  validate(validationSchemas.cancelOrder),
+   ProductService.cancelOrder);
+
+// change order status
+router.patch('/change-order-status/:id', 
+  validateParams(validationSchemas.paramsIdValidation),
+  validate(validationSchemas.changeOrderStatus),
+   ProductService.changeOrderStatus);
 module.exports = router;

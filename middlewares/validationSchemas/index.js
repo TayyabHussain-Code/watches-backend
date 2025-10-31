@@ -5,5 +5,9 @@ module.exports = {
     paramsIdValidation: require('./paramsIdValidation'),
     product : require('./product').create,
     productUpdate : require('./product').update,
-    cart: require('./cart')
+    cart: require('./cart'),
+    checkout: require('./checkout'),
+    cancelOrder: require('./cancelOrder').cancelOrder,
+    changeOrderStatus: require('./cancelOrder').changeOrderStatus,
+    review: require('./review'),
 }

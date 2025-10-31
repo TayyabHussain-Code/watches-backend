@@ -1,6 +1,6 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
-const { Category, Brands, Product, Cart } = require("../../models");
+const { Category, Brands, Product, Cart, Checkout, Checkout_Item } = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
 
@@ -410,7 +410,258 @@ const showCartItems = asyncErrorHandler(async (req, res) => {
       message: error.message,
     });
   }
+});   
+
+// remove cart item 
+const removeCartItem = asyncErrorHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const cartItem = await Cart.findOne({
+    where: { id },
+  });
+
+  if (!cartItem) {
+    return res.status(STATUS_CODES.NOT_FOUND).json({
+      success: false,
+      message: "No cart item found against the id for deletion.",
+    });
+  }
+
+  await Cart.destroy({
+    where: { id },
+  });
+
+  res.status(STATUS_CODES.SUCCESS).json({
+    success: true,
+    message: TEXTS.DELETED,
+  });
 });
+
+// checkout
+const checkout = asyncErrorHandler(async (req, res) => {
+  try {
+    const { name, email, address, phone, products } = req.body;  
+
+    let orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const checkout = await Checkout.create({ name, email, address, phone, orderId });
+
+    const items = await Promise.all(
+      products.map(async (p) => {
+        const product = await Product.findByPk(p.productId);
+        const cartItem = await Cart.findOne({ where: { id: p.cartId } });
+        const finalQuantity = p.quantity ?? cartItem.quantity;
+        const totalPrice = finalQuantity * product.price;
+
+        if (p.quantity && p.quantity !== cartItem.quantity) {
+          await Cart.update(
+            { quantity: finalQuantity },
+            { where: { id: p.cartId } }
+          );
+        }
+
+        // Reduce product stock
+        const newStock = product.stock - finalQuantity;
+        if (newStock < 0) {
+           return res.status(STATUS_CODES.BAD_REQUEST).json({
+            success: false,
+            message: `Insufficient stock for product ID ${p.productId}.`,
+          });
+        } 
+         await Product.update(
+          { stock: newStock, stockStatus: newStock === 0 ? "out_of_stock" : "in_stock" },
+          { where: { id: p.productId } }
+        );
+    
+        return {
+          checkoutId: checkout.id,
+          productId: p.productId,
+          cartId: p.cartId,
+          quantity: finalQuantity,
+          price: totalPrice,
+        };
+      })
+    );
+
+    await Checkout_Item.bulkCreate(items);
+
+    res.status(201).json({
+      success: true,
+      message: "Checkout created successfully",
+      data: { checkout, items },
+    });
+  } catch (error) {
+    console.error("Error during checkout:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});  
+
+
+// show checkout orders
+const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
+  try {
+    const { count, rows } = await Checkout.findAndCountAll({
+      attributes: {exclude: ["deleted"]},
+      include: [
+        {
+          model: Checkout_Item,
+          as: "items",
+          attributes: ["id", "quantity", "price", "created", "updated"],
+          include: [
+            {
+              model: Product,
+              as: "product",
+              attributes: ["id", "name", "coverImage", "price"],
+            },
+          ],
+        },
+      ],
+      ...req.pagination,
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.FOUND,
+      data: rows,
+      total: count,
+      limit: req.pagination.limit,
+      pageCount: Math.ceil(count / req.pagination.limit),
+      page: req.pagination.offset / req.pagination.limit + 1,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// cancel order 
+const cancelOrder = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { cancelReason } = req.body;
+
+    const order = await Checkout.findByPk(id);
+
+    if (!order) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No order found against the id for cancellation.",
+      });
+    }
+
+    if (order.status === "shipped") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Order has been shipped and cannot be cancelled.",
+      });
+    } else if (order.status === "delivered") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Order has been delivered and cannot be cancelled.",
+      });
+    } else if (order.status === "cancelled") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Order is already cancelled.",
+      });
+    }
+
+    //  Get all items for this checkout
+    const items = await Checkout_Item.findAll({
+      where: { checkoutId: id },
+    });
+
+    //  Update stock for each product
+    for (const item of items) {
+      await Product.increment(
+        { stock: item.quantity },
+        { where: { id: item.productId } }
+      );
+    }
+
+    //  Update order status
+    await Checkout.update(
+      { status: "cancelled", cancelReason, updated: new Date() },
+      { where: { id } }
+    );
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: "Order cancelled and stock updated successfully.",
+    });
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+
+// change order 
+const changeOrderStatus = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body;
+
+    const order = await Checkout.findByPk(id);
+
+    if (!order) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No order found against the given ID.",
+      });
+    }
+
+    if (order.status === "shipped") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Order has been shipped and cannot be changed.",
+      });
+    }
+
+    if (order.status === "delivered") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Order has been delivered and cannot be changed.",
+      });
+    }
+
+    if (order.status === "cancelled") {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Order is already cancelled.",
+      });
+    }
+
+    const updateData = { status, updatedAt: new Date() };
+
+    if (status === "cancelled") {
+      updateData.cancelReason = reason || "No reason provided";
+    }
+
+    await Checkout.update(updateData, { where: { id } });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: `Order status updated to ${status} successfully.`,
+    });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+
 
 module.exports = {
   create,
@@ -420,4 +671,9 @@ module.exports = {
   del,
   addToCart,
   showCartItems,
+  removeCartItem,
+  checkout,
+  showCheckoutOrders,
+  cancelOrder,
+  changeOrderStatus,
 };
