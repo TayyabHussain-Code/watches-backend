@@ -204,6 +204,83 @@ const get = asyncErrorHandler(async (req, res) => {
   }
 });
 
+const getByCategory = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params; 
+    const { search } = req.query;
+
+    let filter = {};
+
+    if (search) {
+      filter.name = { [Op.iLike]: `%${search}%` };
+    }      
+
+    if(!id){
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide category id.",
+      });
+    }
+
+    const isExistCategory = await Category.findByPk(id); 
+
+    if(!isExistCategory){
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No category found against the id for update.",
+      });
+    }   
+
+    filter.categoryId = id;
+
+    const { count, rows } = await Product.findAndCountAll({
+       attributes: [
+            "id",
+            "name",
+            "coverImage",
+            "otherImages",
+            "stock",
+            "stockStatus",
+            "price",
+            "discount",
+            "description",
+          ],
+         
+          include: [
+            {
+              model: Category,
+              as: "category",
+              attributes: ["id", "name"],
+            },
+            {
+              model: Brands,
+              as: "brand",
+              attributes: ["id", "name", "icon"],
+            },
+          ],
+      
+      where: filter,
+      ...req.pagination,
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.FOUND,
+      data: rows,
+      total: count,
+      limit: req.pagination.limit,
+      pageCount: Math.ceil(count / req.pagination.limit),
+      page: req.pagination.offset / req.pagination.limit + 1,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error : error.message,
+    });
+  }
+});
+
 const getOne = asyncErrorHandler(async (req, res) => {
   try {
     const { id } = req.params;
@@ -669,6 +746,7 @@ module.exports = {
   create,
   update,
   get,
+  getByCategory,
   getOne,
   del,
   addToCart,
