@@ -502,7 +502,8 @@ const checkout = asyncErrorHandler(async (req, res) => {
 
 // show checkout orders
 const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
-  try {
+  try { 
+    const {status} = req.query;
     const { count, rows } = await Checkout.findAndCountAll({
       attributes: {exclude: ["deleted"]},
       include: [
@@ -519,6 +520,7 @@ const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
           ],
         },
       ],
+      where: status ? { status } : null,
       ...req.pagination,
     });
 
