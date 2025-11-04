@@ -217,7 +217,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
     const { search, page, limit } = req.query;
 
     const pageNum = parseInt(page) || 1;
-    const pageLimit = parseInt(limit) || 10;
+    const pageLimit = parseInt(limit) || 9;
     const offset = (pageNum - 1) * pageLimit;
 
     let filter = {};
