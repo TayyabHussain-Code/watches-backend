@@ -10,12 +10,12 @@ async function handleFileUpload(file, folderName = "image") {
     };
   }
 
-  const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg", "image/svg+xml"];
+  const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg", "image/svg+xml", "image/webp"];
   if (!allowedMimeTypes.includes(file.mimetype)) {
     return {
       success: false,
       statusCode: 400,
-      message: "File must be jpeg, png, jpg, or svg.",
+      message: "File must be jpeg, png, jpg, webp or svg.",
     };
   }
 

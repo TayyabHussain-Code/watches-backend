@@ -1,6 +1,13 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
-const { Category, Brands, Product, Cart, Checkout, Checkout_Item } = require("../../models");
+const {
+  Category,
+  Brands,
+  Product,
+  Cart,
+  Checkout,
+  Checkout_Item,
+} = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
 
@@ -157,31 +164,31 @@ const get = asyncErrorHandler(async (req, res) => {
     }
 
     const { count, rows } = await Product.findAndCountAll({
-       attributes: [
-            "id",
-            "name",
-            "coverImage",
-            "otherImages",
-            "stock",
-            "stockStatus",
-            "price",
-            "discount",
-            "description",
-          ],
-         
-          include: [
-            {
-              model: Category,
-              as: "category",
-              attributes: ["id", "name"],
-            },
-            {
-              model: Brands,
-              as: "brand",
-              attributes: ["id", "name", "icon"],
-            },
-          ],
-      
+      attributes: [
+        "id",
+        "name",
+        "coverImage",
+        "otherImages",
+        "stock",
+        "stockStatus",
+        "price",
+        "discount",
+        "description",
+      ],
+
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Brands,
+          as: "brand",
+          attributes: ["id", "name", "icon"],
+        },
+      ],
+
       where: filter,
       ...req.pagination,
     });
@@ -199,68 +206,73 @@ const get = asyncErrorHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error : error.message,
+      error: error.message,
     });
   }
 });
 
 const getByCategory = asyncErrorHandler(async (req, res) => {
   try {
-    const { id } = req.params; 
-    const { search } = req.query;
+    const { id } = req.params;
+    const { search, page, limit } = req.query;
+
+    const pageNum = parseInt(page) || 1;
+    const pageLimit = parseInt(limit) || 10;
+    const offset = (pageNum - 1) * pageLimit;
 
     let filter = {};
 
     if (search) {
       filter.name = { [Op.iLike]: `%${search}%` };
-    }      
+    }
 
-    if(!id){
+    if (!id) {
       return res.status(STATUS_CODES.BAD_REQUEST).json({
         success: false,
         message: "Please provide category id.",
       });
     }
 
-    const isExistCategory = await Category.findByPk(id); 
+    const isExistCategory = await Category.findByPk(id);
 
-    if(!isExistCategory){
+    if (!isExistCategory) {
       return res.status(STATUS_CODES.NOT_FOUND).json({
         success: false,
         message: "No category found against the id for update.",
       });
-    }   
+    }
 
     filter.categoryId = id;
 
     const { count, rows } = await Product.findAndCountAll({
-       attributes: [
-            "id",
-            "name",
-            "coverImage",
-            "otherImages",
-            "stock",
-            "stockStatus",
-            "price",
-            "discount",
-            "description",
-          ],
-         
-          include: [
-            {
-              model: Category,
-              as: "category",
-              attributes: ["id", "name"],
-            },
-            {
-              model: Brands,
-              as: "brand",
-              attributes: ["id", "name", "icon"],
-            },
-          ],
-      
+      attributes: [
+        "id",
+        "name",
+        "coverImage",
+        "otherImages",
+        "stock",
+        "stockStatus",
+        "price",
+        "discount",
+        "description",
+      ],
+
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Brands,
+          as: "brand",
+          attributes: ["id", "name", "icon"],
+        },
+      ],
+
       where: filter,
-      ...req.pagination,
+      offset,
+      limit: pageLimit,
     });
 
     res.status(STATUS_CODES.SUCCESS).json({
@@ -276,7 +288,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
-      error : error.message,
+      error: error.message,
     });
   }
 });
@@ -288,30 +300,29 @@ const getOne = asyncErrorHandler(async (req, res) => {
     const data = await Product.findOne({
       where: { id },
       attributes: [
-            "id",
-            "name",
-            "coverImage",
-            "otherImages",
-            "stock",
-            "stockStatus",
-            "price",
-            "discount",
-            "description",
-          ],
-         
-          include: [
-            {
-              model: Category,
-              as: "category",
-              attributes: ["id", "name"],
-            },
-            {
-              model: Brands,
-              as: "brand",
-              attributes: ["id", "name", "icon"],
-            },
-          ],
-      
+        "id",
+        "name",
+        "coverImage",
+        "otherImages",
+        "stock",
+        "stockStatus",
+        "price",
+        "discount",
+        "description",
+      ],
+
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Brands,
+          as: "brand",
+          attributes: ["id", "name", "icon"],
+        },
+      ],
     });
 
     res.status(STATUS_CODES.SUCCESS).json({
@@ -487,9 +498,9 @@ const showCartItems = asyncErrorHandler(async (req, res) => {
       message: error.message,
     });
   }
-});   
+});
 
-// remove cart item 
+// remove cart item
 const removeCartItem = asyncErrorHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -517,11 +528,17 @@ const removeCartItem = asyncErrorHandler(async (req, res) => {
 // checkout
 const checkout = asyncErrorHandler(async (req, res) => {
   try {
-    const { name, email, address, phone, products } = req.body;  
+    const { name, email, address, phone, products } = req.body;
 
     let orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    const checkout = await Checkout.create({ name, email, address, phone, orderId });
+    const checkout = await Checkout.create({
+      name,
+      email,
+      address,
+      phone,
+      orderId,
+    });
 
     const items = await Promise.all(
       products.map(async (p) => {
@@ -540,16 +557,19 @@ const checkout = asyncErrorHandler(async (req, res) => {
         // Reduce product stock
         const newStock = product.stock - finalQuantity;
         if (newStock < 0) {
-           return res.status(STATUS_CODES.BAD_REQUEST).json({
+          return res.status(STATUS_CODES.BAD_REQUEST).json({
             success: false,
             message: `Insufficient stock for product ID ${p.productId}.`,
           });
-        } 
-         await Product.update(
-          { stock: newStock, stockStatus: newStock === 0 ? "out_of_stock" : "in_stock" },
+        }
+        await Product.update(
+          {
+            stock: newStock,
+            stockStatus: newStock === 0 ? "out_of_stock" : "in_stock",
+          },
           { where: { id: p.productId } }
         );
-    
+
         return {
           checkoutId: checkout.id,
           productId: p.productId,
@@ -574,15 +594,14 @@ const checkout = asyncErrorHandler(async (req, res) => {
       message: error.message,
     });
   }
-});  
-
+});
 
 // show checkout orders
 const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
-  try { 
-    const {status} = req.query;
+  try {
+    const { status } = req.query;
     const { count, rows } = await Checkout.findAndCountAll({
-      attributes: {exclude: ["deleted"]},
+      attributes: { exclude: ["deleted"] },
       include: [
         {
           model: Checkout_Item,
@@ -618,7 +637,7 @@ const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
   }
 });
 
-// cancel order 
+// cancel order
 const cancelOrder = asyncErrorHandler(async (req, res) => {
   try {
     const { id } = req.params;
@@ -682,8 +701,7 @@ const cancelOrder = asyncErrorHandler(async (req, res) => {
   }
 });
 
-
-// change order 
+// change order
 const changeOrderStatus = asyncErrorHandler(async (req, res) => {
   try {
     const { id } = req.params;
@@ -739,8 +757,6 @@ const changeOrderStatus = asyncErrorHandler(async (req, res) => {
     });
   }
 });
-
-
 
 module.exports = {
   create,

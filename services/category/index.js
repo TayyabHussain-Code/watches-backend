@@ -95,6 +95,7 @@ const get = asyncErrorHandler(async (req, res) => {
     const { count, rows } = await Category.findAndCountAll({
       where: filter,
       ...req.pagination,
+      order: [["created", "ASC"]],
     });
 
     res.status(STATUS_CODES.SUCCESS).json({
