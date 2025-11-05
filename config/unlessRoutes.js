@@ -12,6 +12,7 @@ module.exports = {
        { url: /^\/api\/product\/cancel-order\/[a-zA-Z0-9\-]+$/, method: "PATCH" },
        { url: "/api/category/get", method: "GET" },
        { url: /^\/api\/category\/get\/[a-zA-Z0-9\-]+$/, method: "GET" },
+       { url: "/", method: "GET" },
       
       // { url: "/^\/api\/v1\/test\/*/", method: "PATCH" },
     ],
