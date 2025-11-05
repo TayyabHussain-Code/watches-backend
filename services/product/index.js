@@ -37,7 +37,10 @@ const create = asyncErrorHandler(async (req, res) => {
         parseFloat(req.body.price) * (1 - parseFloat(req.body.discount) / 100)
       );
     }
-
+    if (req.body.description && typeof req.body.description === 'string') {
+ 
+    req.body.description = JSON.parse(req.body.description);
+    }
     // Create product
     const data = await Product.create({
       ...req.body,
@@ -440,10 +443,25 @@ const addToCart = asyncErrorHandler(async (req, res) => {
 
 // show cart items
 const showCartItems = asyncErrorHandler(async (req, res) => {
-  try {
+  try { 
+    console.log("body =====>", req.body);
     const { cartIds } = req.body;
 
-    console.log("cartIds", cartIds);
+  if (!cartIds) {
+  return res.status(400).json({
+    success: false,
+    message: "cartIds is required",
+  });
+}
+
+
+  if (typeof cartIds === "undefined") {
+  return res.status(400).json({
+    success: false,
+    message: "cartIds key is missing in request body",
+  });
+}
+
 
     if (!cartIds || !Array.isArray(cartIds) || cartIds.length === 0) {
       return res.status(STATUS_CODES.BAD_REQUEST).json({

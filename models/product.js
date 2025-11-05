@@ -1,6 +1,6 @@
-'use strict';
-const BaseModel = require('./baseModel');
-const { DataTypes } = require('sequelize'); 
+"use strict";
+const BaseModel = require("./baseModel");
+const { DataTypes } = require("sequelize");
 
 class Product extends BaseModel {
   static initModel(sequelize) {
@@ -9,21 +9,24 @@ class Product extends BaseModel {
       {
         name: {
           type: DataTypes.STRING,
-          allowNull: false
+          allowNull: false,
         },
         price: {
           type: DataTypes.INTEGER,
-          allowNull: false
+          allowNull: false,
         },
         discount: {
           type: DataTypes.INTEGER,
-          defaultValue: 0
+          defaultValue: 0,
         },
-        description: DataTypes.TEXT,
+        description: {
+          type: DataTypes.ARRAY(DataTypes.STRING),
+          allowNull: true,
+        },
         categoryId: {
           type: DataTypes.UUID,
           allowNull: false,
-        }, 
+        },
         brandId: {
           type: DataTypes.UUID,
           allowNull: false,
@@ -33,27 +36,31 @@ class Product extends BaseModel {
           defaultValue: 0,
         },
         stockStatus: {
-          type: DataTypes.ENUM('in_stock', 'out_of_stock'),
-          defaultValue: 'in_stock',
+          type: DataTypes.ENUM("in_stock", "out_of_stock"),
+          defaultValue: "in_stock",
         },
         coverImage: {
           type: DataTypes.STRING,
-        }, 
+        },
         otherImages: {
           type: DataTypes.ARRAY(DataTypes.STRING),
-        }
-      }, {
-        modelName: 'Product',
-        tableName: 'products',
+        },
+      },
+      {
+        modelName: "Product",
+        tableName: "products",
       }
-    ); 
+    );
   }
 
   static associate(models) {
-    // define association here  
-    Product.belongsTo(models.Category, { foreignKey: 'categoryId', as: 'category' });
-    Product.belongsTo(models.Brands, { foreignKey: 'brandId', as: 'brand' });
-    Product.hasMany(models.Cart, { foreignKey: 'productId', as: 'carts' });
+    // define association here
+    Product.belongsTo(models.Category, {
+      foreignKey: "categoryId",
+      as: "category",
+    });
+    Product.belongsTo(models.Brands, { foreignKey: "brandId", as: "brand" });
+    Product.hasMany(models.Cart, { foreignKey: "productId", as: "carts" });
   }
 }
 

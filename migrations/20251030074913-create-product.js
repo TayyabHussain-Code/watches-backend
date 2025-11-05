@@ -22,7 +22,7 @@ module.exports = {
         defaultValue: 0,
       },
       description: {
-        type: Sequelize.TEXT,
+         type: Sequelize.ARRAY(Sequelize.STRING),
       },
       categoryId: {
         type: Sequelize.UUID,

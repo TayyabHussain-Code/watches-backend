@@ -29,7 +29,7 @@ router.delete("/delete/:id", validateParams(validationSchemas.paramsIdValidation
 
 // add to cart  
 router.post('/add-to-cart', validate(validationSchemas.cart), ProductService.addToCart)
-router.get('/show-cart-item', ProductService.showCartItems)  
+router.post('/show-cart-item', ProductService.showCartItems)  
 router.delete('/remove-cart-item/:id', validateParams(validationSchemas.paramsIdValidation), ProductService.removeCartItem)
 
 // checkout  
