@@ -24,7 +24,7 @@ app.use(authenticate.unless(authenticateRoutes));
 app.get("/decode", (req, res) => {
   res.status(200).json({ message: "Token Decoded Successfully!", decodedToken : req.user });
 });
-app.get('/test', (req, res) => {
+app.get('/', (req, res) => {
   res.status(200).json({ message: "Welcome to the API!" });
 });
 app.use(require('./middlewares/paginate').paginate)
