@@ -21,8 +21,12 @@ module.exports = {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },
+      totalprice: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+      },
       description: {
-         type: Sequelize.ARRAY(Sequelize.STRING),
+        type: Sequelize.ARRAY(Sequelize.STRING),
       },
       categoryId: {
         type: Sequelize.UUID,

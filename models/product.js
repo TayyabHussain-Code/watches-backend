@@ -19,6 +19,10 @@ class Product extends BaseModel {
           type: DataTypes.INTEGER,
           defaultValue: 0,
         },
+        totalprice: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+        },
         description: {
           type: DataTypes.ARRAY(DataTypes.STRING),
           allowNull: true,

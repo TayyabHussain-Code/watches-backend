@@ -33,13 +33,15 @@ const create = asyncErrorHandler(async (req, res) => {
 
     // handle discount in %
     if (req.body.discount && req.body.discount > 0) {
-      req.body.price = Math.round(
+      req.body.totalprice = Math.round(
         parseFloat(req.body.price) * (1 - parseFloat(req.body.discount) / 100)
       );
+    } else {
+      req.body.totalprice = req.body.price;
     }
-    if (req.body.description && typeof req.body.description === 'string') {
- 
-    req.body.description = JSON.parse(req.body.description);
+
+    if (req.body.description && typeof req.body.description === "string") {
+      req.body.description = JSON.parse(req.body.description);
     }
     // Create product
     const data = await Product.create({
@@ -122,6 +124,16 @@ const update = asyncErrorHandler(async (req, res) => {
       uploadedFilePaths.push(req.files[i].path);
     }
   }
+
+  let priceToUse = req.body.price ? parseFloat(req.body.price) : parseFloat(currentRecord.price);
+  let discountToUse = req.body.discount ? parseFloat(req.body.discount) : parseFloat(currentRecord.discount) || 0;
+
+  if (discountToUse > 0) {
+    req.body.totalprice = Math.round(priceToUse * (1 - discountToUse / 100));
+  } else {
+    req.body.totalprice = priceToUse;
+  }
+
   const updateData = { ...req.body };
   // Update product
   const [status, updatedData] = await Product.update(
@@ -175,6 +187,7 @@ const get = asyncErrorHandler(async (req, res) => {
         "stock",
         "stockStatus",
         "price",
+        "totalprice",
         "discount",
         "description",
       ],
@@ -256,6 +269,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
         "stock",
         "stockStatus",
         "price",
+        "totalprice",
         "discount",
         "description",
       ],
@@ -310,6 +324,7 @@ const getOne = asyncErrorHandler(async (req, res) => {
         "stock",
         "stockStatus",
         "price",
+        "totalprice",
         "discount",
         "description",
       ],
@@ -441,27 +456,86 @@ const addToCart = asyncErrorHandler(async (req, res) => {
   }
 });
 
+// update add to cart
+const updateCart = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+
+    const cart = await Cart.findOne({
+      where: { id },
+    });
+
+    if (!cart) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No record found against the id.",
+      });
+    }
+
+    const product = await Product.findOne({
+      where: { id: cart.productId },
+    });
+
+    if (!product) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No record found against the id for deletion.",
+      });
+    }
+
+    let price = product.price * quantity;
+
+    await Cart.update(
+      {
+        quantity,
+        price,
+      },
+      {
+        where: { id },
+      }
+    );
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: "Product updated successfully.",
+      cartId: id,
+      price: price,
+      product: {
+        name: product.name,
+        coverImage: product.coverImage,
+        stock: product.stock,
+        stockStatus: product.stockStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating to cart:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 // show cart items
 const showCartItems = asyncErrorHandler(async (req, res) => {
-  try { 
+  try {
     console.log("body =====>", req.body);
     const { cartIds } = req.body;
 
-  if (!cartIds) {
-  return res.status(400).json({
-    success: false,
-    message: "cartIds is required",
-  });
-}
+    if (!cartIds) {
+      return res.status(400).json({
+        success: false,
+        message: "cartIds is required",
+      });
+    }
 
-
-  if (typeof cartIds === "undefined") {
-  return res.status(400).json({
-    success: false,
-    message: "cartIds key is missing in request body",
-  });
-}
-
+    if (typeof cartIds === "undefined") {
+      return res.status(400).json({
+        success: false,
+        message: "cartIds key is missing in request body",
+      });
+    }
 
     if (!cartIds || !Array.isArray(cartIds) || cartIds.length === 0) {
       return res.status(STATUS_CODES.BAD_REQUEST).json({
@@ -784,6 +858,7 @@ module.exports = {
   getOne,
   del,
   addToCart,
+  updateCart,
   showCartItems,
   removeCartItem,
   checkout,
