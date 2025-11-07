@@ -425,7 +425,7 @@ const addToCart = asyncErrorHandler(async (req, res) => {
       });
     }
 
-    let price = product.price * req.body.quantity;
+    let price = product.totalprice * req.body.quantity;
 
     const data = await Cart.create({
       productId: req.body.productId,
@@ -520,7 +520,7 @@ const updateCart = asyncErrorHandler(async (req, res) => {
 // show cart items
 const showCartItems = asyncErrorHandler(async (req, res) => {
   try {
-    console.log("body =====>", req.body);
+    
     const { cartIds } = req.body;
 
     if (!cartIds) {
@@ -578,6 +578,7 @@ const showCartItems = asyncErrorHandler(async (req, res) => {
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
       message: TEXTS.FOUND,
+      totalPrice: rows.reduce((total, item) => total + item.price, 0),
       data: rows,
       total: count,
       limit: req.pagination.limit,
