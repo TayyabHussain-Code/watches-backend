@@ -484,7 +484,7 @@ const updateCart = asyncErrorHandler(async (req, res) => {
       });
     }
 
-    let price = product.price * quantity;
+    let price = product.totalprice * quantity;
 
     await Cart.update(
       {
