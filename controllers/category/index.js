@@ -17,7 +17,6 @@ router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), Ca
 router.patch(
   "/update/:id",
   validateParams(validationSchemas.paramsIdValidation),
-  validate(validationSchemas.user),
   CategoryService.update
 );
 

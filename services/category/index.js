@@ -70,13 +70,13 @@ const update = asyncErrorHandler(async (req, res) => {
 
   if (!status) {
     return res.status(STATUS_CODES.NOT_FOUND).json({
-      success: 404,
+      success: false,
       message: "Update failed",
     });
   }
 
   return res.status(STATUS_CODES.SUCCESS).json({
-    success: STATUS_CODES.SUCCESS,
+    success: true,
     message: "Record updated successfully",
     // data: updatedData[0], // Returning the updated category data
   });
