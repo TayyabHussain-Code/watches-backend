@@ -293,7 +293,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
         {
           model: Reviews,
           as: "reviews",
-          attributes: ["name", "imagesUrl", "rating", "review"],
+          attributes: ["name", "imagesUrl", "rating", "review", "created"],
         },
       ],
 
@@ -353,7 +353,7 @@ const getOne = asyncErrorHandler(async (req, res) => {
         {
           model: Reviews,
           as: "reviews",
-          attributes: ["name", "imagesUrl", "rating", "review"],
+          attributes: ["name", "imagesUrl", "rating", "review", "created"],
         },
       ],
     });
