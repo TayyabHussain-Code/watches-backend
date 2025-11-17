@@ -14,7 +14,7 @@ router.post(
 router.get("/get", BrandService.get);
 router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), BrandService.getOne);
 
-router.patch(
+router.post(
   "/update/:id",
   validateParams(validationSchemas.paramsIdValidation),
   validate(validationSchemas.brand),
