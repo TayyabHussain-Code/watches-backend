@@ -59,12 +59,10 @@ class Product extends BaseModel {
 
   static associate(models) {
     // define association here
-    Product.belongsTo(models.Category, {
-      foreignKey: "categoryId",
-      as: "category",
-    });
+    Product.belongsTo(models.Category, { foreignKey: "categoryId", as: "category",});
     Product.belongsTo(models.Brands, { foreignKey: "brandId", as: "brand" });
     Product.hasMany(models.Cart, { foreignKey: "productId", as: "carts" });
+    Product.hasMany(models.Reviews, { foreignKey: "productId", as: "reviews" });
   }
 }
 

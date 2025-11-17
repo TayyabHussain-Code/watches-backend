@@ -7,6 +7,7 @@ const {
   Cart,
   Checkout,
   Checkout_Item,
+  Reviews,
 } = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
@@ -254,7 +255,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
     if (!isExistCategory) {
       return res.status(STATUS_CODES.NOT_FOUND).json({
         success: false,
-        message: "No category found against the id for update.",
+        message: "No category found against the id.",
       });
     }
 
@@ -284,6 +285,11 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
           model: Brands,
           as: "brand",
           attributes: ["id", "name", "icon"],
+        },
+        {
+          model: Reviews,
+          as: "reviews",
+          attributes: [ "name", "imagesUrl" , "rating", "review"],
         },
       ],
 
@@ -356,7 +362,8 @@ const getOne = asyncErrorHandler(async (req, res) => {
   }
 });
 
-const del = asyncErrorHandler(async (req, res) => {
+const del = asyncErrorHandler(async (req, res) => { 
+
   const product = await Product.findOne({
     where: { id: req.params?.id },
   });

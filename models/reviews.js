@@ -36,7 +36,7 @@ class Reviews extends BaseModel {
   }
 
   static associate(models) {
-   
+    Reviews.belongsTo(models.Product, { foreignKey: "productId", as: "product" });
   }
 }
 
