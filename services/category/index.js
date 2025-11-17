@@ -1,7 +1,8 @@
 const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
 const { Category } = require("../../models");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
+const e = require("express");
 
 const create = asyncErrorHandler(async (req, res) => {
   try {
@@ -92,7 +93,18 @@ const get = asyncErrorHandler(async (req, res) => {
       filter.name = { [Op.iLike]: `%${search}%` };
     }
 
-    const { count, rows } = await Category.findAndCountAll({
+    const { count, rows } = await Category.findAndCountAll({ 
+      attributes: {
+      include: [
+          [
+            Sequelize.literal(`( 
+               SELECT CAST(COUNT(*) AS INTEGER) FROM products AS p 
+               WHERE p."categoryId" = "Category"."id"
+              )`),
+            "totalProducts",
+          ]
+      ],
+    },
       where: filter,
       ...req.pagination,
       order: [["created", "ASC"]],
@@ -111,6 +123,7 @@ const get = asyncErrorHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
+      error: error.message,
     });
   }
 });

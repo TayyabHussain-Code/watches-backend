@@ -21,6 +21,7 @@ const { DataTypes } = require("sequelize");
    
     static associate(models) {
       // define association here
+      Category.hasMany(models.Product, { foreignKey: "categoryId", as: "products" });
     }
   }
  
