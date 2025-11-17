@@ -126,8 +126,12 @@ const update = asyncErrorHandler(async (req, res) => {
     }
   }
 
-  let priceToUse = req.body.price ? parseFloat(req.body.price) : parseFloat(currentRecord.price);
-  let discountToUse = req.body.discount ? parseFloat(req.body.discount) : parseFloat(currentRecord.discount) || 0;
+  let priceToUse = req.body.price
+    ? parseFloat(req.body.price)
+    : parseFloat(currentRecord.price);
+  let discountToUse = req.body.discount
+    ? parseFloat(req.body.discount)
+    : parseFloat(currentRecord.discount) || 0;
 
   if (discountToUse > 0) {
     req.body.totalprice = Math.round(priceToUse * (1 - discountToUse / 100));
@@ -289,7 +293,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
         {
           model: Reviews,
           as: "reviews",
-          attributes: [ "name", "imagesUrl" , "rating", "review"],
+          attributes: ["name", "imagesUrl", "rating", "review"],
         },
       ],
 
@@ -346,6 +350,11 @@ const getOne = asyncErrorHandler(async (req, res) => {
           as: "brand",
           attributes: ["id", "name", "icon"],
         },
+        {
+          model: Reviews,
+          as: "reviews",
+          attributes: ["name", "imagesUrl", "rating", "review"],
+        },
       ],
     });
 
@@ -362,8 +371,7 @@ const getOne = asyncErrorHandler(async (req, res) => {
   }
 });
 
-const del = asyncErrorHandler(async (req, res) => { 
-
+const del = asyncErrorHandler(async (req, res) => {
   const product = await Product.findOne({
     where: { id: req.params?.id },
   });
@@ -529,7 +537,6 @@ const updateCart = asyncErrorHandler(async (req, res) => {
 // show cart items
 const showCartItems = asyncErrorHandler(async (req, res) => {
   try {
-    
     const { cartIds } = req.body;
 
     if (!cartIds) {
