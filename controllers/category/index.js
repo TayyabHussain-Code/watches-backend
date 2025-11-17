@@ -14,7 +14,7 @@ router.post(
 router.get("/get", CategoryService.get);
 router.get("/get/:id",  validateParams(validationSchemas.paramsIdValidation), CategoryService.getOne);
 
-router.patch(
+router.post(
   "/update/:id",
   validateParams(validationSchemas.paramsIdValidation),
   CategoryService.update
