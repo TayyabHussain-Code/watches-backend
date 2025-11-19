@@ -729,13 +729,35 @@ const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
       ...req.pagination,
     });
 
+    // Flatten so each checkout-item becomes a separate record
+    const flattenedData = [];
+    rows.forEach((checkout) => {
+      checkout.items.forEach((item) => {
+        flattenedData.push({
+          id: checkout.id, // checkout id
+          name: checkout.name,
+          email: checkout.email,
+          address: checkout.address,
+          phone: checkout.phone,
+          orderId: checkout.orderId,
+          status: checkout.status,
+          created: checkout.created,
+          update: checkout.updated,
+          quantity: item.quantity,
+          price: item.price,
+         
+          product: item.product,
+        });
+      });
+    });
+
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
       message: TEXTS.FOUND,
-      data: rows,
-      total: count,
+      data: flattenedData,
+      total: flattenedData.length,
       limit: req.pagination.limit,
-      pageCount: Math.ceil(count / req.pagination.limit),
+      pageCount: Math.ceil(flattenedData.length / req.pagination.limit),
       page: req.pagination.offset / req.pagination.limit + 1,
     });
   } catch (error) {
@@ -745,6 +767,7 @@ const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
     });
   }
 });
+
 
 // cancel order
 const cancelOrder = asyncErrorHandler(async (req, res) => {
