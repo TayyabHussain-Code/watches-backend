@@ -871,10 +871,7 @@ const changeOrderStatus = asyncErrorHandler(async (req, res) => {
 
     const updateData = { status, updatedAt: new Date() };
 
-    if (status === "cancelled") {
-      updateData.cancelReason = reason || "No reason provided";
-    }
-
+ 
     await Checkout.update(updateData, { where: { id } });
 
     res.status(STATUS_CODES.SUCCESS).json({
