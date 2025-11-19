@@ -26,16 +26,8 @@ const changeOrderStatus = Joi.object({
     }),
 
   reason: Joi.string()
-    .trim()
-    .min(2)
-    .max(100)
     .allow('')
-    .messages({
-      "string.base": "Reason must be a string",
-
-      "string.min": "Reason must be at least 2 characters long",
-
-    }),
+   ,
     
 });
 module.exports = {cancelOrder, changeOrderStatus};
