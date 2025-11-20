@@ -2,6 +2,8 @@ const asyncErrorHandler = require("../../utils/asyncErrorHandler");
 const { STATUS_CODES, TEXTS } = require("../../config/constants");
 const { Brands } = require("../../models");
 const { Op } = require("sequelize");
+const fs = require("fs").promises;
+const path = require("path");
 
 const create = asyncErrorHandler(async (req, res) => {
   try {
@@ -140,25 +142,103 @@ const getOne = asyncErrorHandler(async (req, res) => {
   }
 });
 
-const del = asyncErrorHandler(async (req, res) => {
-  const deleted = await Brands.destroy({
-    where: {
-      id: req.params?.id,
-    },
-  });
+// Delete single icon from Media_Link
+const deleteIcon = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  if (!deleted) {
-    return res.status(STATUS_CODES.NOT_FOUND).json({
+    const brand = await Brands.findOne({
+      where: { id },
+    });
+
+    if (!brand) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No record found against the id.",
+      });
+    }
+
+    if (!brand.icon) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No icon found for this media link.",
+      });
+    }
+
+    // Get file path
+    const imagePath = `./public${brand.icon}`;
+
+    // Delete file from filesystem
+    try {
+      await fs.unlink(imagePath);
+      console.log(`Deleted file: ${imagePath}`);
+    } catch (err) {
+      console.error(`Failed to delete file ${imagePath}:`, err);
+      // Continue even if file deletion fails
+    }
+
+    // Update media_link - set icon to null
+    await Brands.update(
+      { icon: null },
+      { where: { id } }
+    );
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.DELETED,
+    });
+  } catch (error) {
+    console.error("Error deleting icon:", error);
+    res.status(500).json({
       success: false,
-      message: "No record found against the id for deletion.",
+      message: "Internal Server Error",
     });
   }
-
-  res.status(STATUS_CODES.SUCCESS).json({
-    success: true,
-    message: TEXTS.DELETED,
-  });
 });
+
+// Delete entire Media_Link record
+const del = asyncErrorHandler(async (req, res) => {
+  try {
+    const brands = await Brands.findOne({
+      where: { id: req.params?.id },
+    });
+
+    if (!brands) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No record found against the id for deletion.",
+      });
+    }
+
+    // Delete icon file if exists
+    if (brands.icon) {
+      try {
+        const imagePath = `./public${brands.icon}`;
+        await fs.unlink(imagePath);
+        console.log(`Deleted file: ${imagePath}`);
+      } catch (err) {
+        console.error(`Failed to delete file:`, err);
+      }
+    }
+
+    // Delete record from DB
+    await Brands.destroy({
+      where: { id: req.params?.id },
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.DELETED,
+    });
+  } catch (error) {
+    console.error("Error deleting brand:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}); 
+
 
 module.exports = {
   create,
