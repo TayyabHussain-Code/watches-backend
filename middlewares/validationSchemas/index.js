@@ -10,4 +10,5 @@ module.exports = {
     cancelOrder: require('./cancelOrder').cancelOrder,
     changeOrderStatus: require('./cancelOrder').changeOrderStatus,
     review: require('./review'),
+    Medialink: require('./link')
 }
