@@ -4,9 +4,11 @@ const BrandService = require("../../services/brand");
 const { validate } = require("../../middlewares/validator");
 const validationSchemas = require("../../middlewares/validationSchemas");
 const { validateParams } = require("../../middlewares/paramsValidate");
+const { upload } = require("../../utils/multer");
 
 router.post(
-  "/add",
+  "/add", 
+   upload.single("image"),
   validate(validationSchemas.brand),
   BrandService.create
 );

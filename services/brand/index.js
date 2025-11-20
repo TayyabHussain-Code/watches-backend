@@ -17,8 +17,12 @@ const create = asyncErrorHandler(async (req, res) => {
         message: "Brand already exist.",
       });
     }
+     let icon = null;
+    if (req.file) {
+      icon = `/images/${req.file.filename}`;
+    } 
 
-    const data = await Brands.create({ ...req.body });
+    const data = await Brands.create({ ...req.body, icon });
 
     res.status(STATUS_CODES.CREATED).json({
       success: true,
