@@ -8,6 +8,7 @@ const {
   Checkout,
   Checkout_Item,
   Reviews,
+  Sequelize,
 } = require("../../models");
 const { Op } = require("sequelize");
 const { handleFileUpload } = require("../../utils/fileUpload");
@@ -235,16 +236,37 @@ const get = asyncErrorHandler(async (req, res) => {
 const getByCategory = asyncErrorHandler(async (req, res) => {
   try {
     const { id } = req.params;
-    const { search, page, limit } = req.query;
+    const { search, page, limit, filter } = req.query;
 
     const pageNum = parseInt(page) || 1;
     const pageLimit = parseInt(limit) || 9;
     const offset = (pageNum - 1) * pageLimit;
 
-    let filter = {};
+    let whereCondition = {};
 
     if (search) {
-      filter.name = { [Op.iLike]: `%${search}%` };
+      whereCondition.name = { [Op.iLike]: `%${search}%` };
+    }
+
+    let order = [["created", "DESC"]];
+
+    if (filter) {
+      switch (filter) {
+        case "high_to_low":
+          order = [["totalprice", "DESC"]];
+          break;
+
+        case "low_to_high":
+          order = [["totalprice", "ASC"]];
+          break;
+
+        case "newest":
+          order = [["created", "DESC"]];
+          break;
+
+        default:
+          order = [["created", "DESC"]];
+      }
     }
 
     if (!id) {
@@ -263,7 +285,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
       });
     }
 
-    filter.categoryId = id;
+    whereCondition.categoryId = id;
 
     const { count, rows } = await Product.findAndCountAll({
       attributes: [
@@ -277,6 +299,7 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
         "totalprice",
         "discount",
         "description",
+        "created"
       ],
 
       include: [
@@ -297,7 +320,8 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
         },
       ],
 
-      where: filter,
+      where: whereCondition,
+      order,
       offset,
       limit: pageLimit,
     });
@@ -745,7 +769,7 @@ const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
           update: checkout.updated,
           quantity: item.quantity,
           price: item.price,
-         
+
           product: item.product,
         });
       });
@@ -767,7 +791,6 @@ const showCheckoutOrders = asyncErrorHandler(async (req, res) => {
     });
   }
 });
-
 
 // cancel order
 const cancelOrder = asyncErrorHandler(async (req, res) => {
@@ -871,7 +894,6 @@ const changeOrderStatus = asyncErrorHandler(async (req, res) => {
 
     const updateData = { status, updatedAt: new Date() };
 
- 
     await Checkout.update(updateData, { where: { id } });
 
     res.status(STATUS_CODES.SUCCESS).json({

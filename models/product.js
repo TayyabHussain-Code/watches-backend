@@ -49,6 +49,7 @@ class Product extends BaseModel {
         otherImages: {
           type: DataTypes.ARRAY(DataTypes.STRING),
         },
+       
       },
       {
         modelName: "Product",
