@@ -15,6 +15,7 @@ router.post(
 
 router.get("/get", ProductService.get);
 router.get("/get-by-category/:id", validateParams(validationSchemas.paramsIdValidation), ProductService.getByCategory);
+router.get("/get-by-brand/:id", validateParams(validationSchemas.paramsIdValidation), ProductService.getByBrand);
 router.get("/get/:id", validateParams(validationSchemas.paramsIdValidation), ProductService.getOne);
 
 router.patch(

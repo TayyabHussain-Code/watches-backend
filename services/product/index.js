@@ -342,7 +342,118 @@ const getByCategory = asyncErrorHandler(async (req, res) => {
       error: error.message,
     });
   }
-});
+});   
+
+const getByBrand = asyncErrorHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { search, page, limit, filter } = req.query;
+
+    const pageNum = parseInt(page) || 1;
+    const pageLimit = parseInt(limit) || 9;
+    const offset = (pageNum - 1) * pageLimit;
+
+    let whereCondition = {};
+
+    if (search) {
+      whereCondition.name = { [Op.iLike]: `%${search}%` };
+    }
+
+    let order = [["created", "DESC"]];
+
+    if (filter) {
+      switch (filter) {
+        case "high_to_low":
+          order = [["totalprice", "DESC"]];
+          break;
+
+        case "low_to_high":
+          order = [["totalprice", "ASC"]];
+          break;
+
+        case "newest":
+          order = [["created", "DESC"]];
+          break;
+
+        default:
+          order = [["created", "DESC"]];
+      }
+    }
+
+    if (!id) {
+      return res.status(STATUS_CODES.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide brand id.",
+      });
+    }
+
+    const isExistBrand = await Brands.findByPk(id);
+
+    if (!isExistBrand) {
+      return res.status(STATUS_CODES.NOT_FOUND).json({
+        success: false,
+        message: "No brand found against the id.",
+      });
+    }
+
+    whereCondition.brandId = id;
+
+    const { count, rows } = await Product.findAndCountAll({
+      attributes: [
+        "id",
+        "name",
+        "coverImage",
+        "otherImages",
+        "stock",
+        "stockStatus",
+        "price",
+        "totalprice",
+        "discount",
+        "description",
+        "created"
+      ],
+
+      include: [
+        {
+          model: Category,
+          as: "category",
+          attributes: ["id", "name"],
+        },
+        {
+          model: Brands,
+          as: "brand",
+          attributes: ["id", "name", "icon"],
+        },
+        {
+          model: Reviews,
+          as: "reviews",
+          attributes: ["name", "imagesUrl", "rating", "review", "created"],
+        },
+      ],
+
+      where: whereCondition,
+      order,
+      offset,
+      limit: pageLimit,
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: TEXTS.FOUND,
+      data: rows,
+      total: count,
+      limit: req.pagination.limit,
+      pageCount: Math.ceil(count / req.pagination.limit),
+      page: req.pagination.offset / req.pagination.limit + 1,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}); 
 
 const getOne = asyncErrorHandler(async (req, res) => {
   try {
@@ -914,6 +1025,7 @@ module.exports = {
   update,
   get,
   getByCategory,
+  getByBrand,
   getOne,
   del,
   addToCart,

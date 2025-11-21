@@ -17,6 +17,8 @@ module.exports = {
       { url: "/api/link/get", method: "GET" },
       { url: /^\/api\/link\/get\/[a-zA-Z0-9\-]+$/, method: "GET" },
       { url: "/api/review/add", method: "POST" },
+      { url: "/api/brand/get", method: "GET" },
+       { url: /^\/api\/brand\/get\/[a-zA-Z0-9\-]+$/, method: "GET" },
     ],
   },
 };
