@@ -5,6 +5,7 @@ module.exports = {
       { url: "/api/product/get", method: "GET" },
       { url: /^\/api\/product\/get\/[a-zA-Z0-9\-]+$/, method: "GET" },
       { url: /^\/api\/product\/get-by-category\/[a-zA-Z0-9\-]+$/, method: "GET" },
+      { url: /^\/api\/product\/get-by-brand\/[a-zA-Z0-9\-]+$/, method: "GET" },
       { url: "/api/product/add-to-cart", method: "POST" },
       { url: /^\/api\/product\/update-cart-item\/[a-zA-Z0-9\-]+$/, method: "PATCH" },
       { url: "/api/product/show-cart-item", method: "POST" },
